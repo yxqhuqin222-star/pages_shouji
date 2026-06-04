@@ -20,7 +20,7 @@
 ## 文件结构
 
 ```text
-。
+.
 ├── index.html
 ├── styles.css
 ├── app.js
