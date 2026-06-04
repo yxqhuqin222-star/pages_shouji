@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>碎片收集</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="capture-panel" aria-labelledby="app-title">
+        <div class="brand-block">
+          <p class="eyebrow">gin</p>
+          <h1 id="app-title">碎片收集</h1>
+        </div>
+
+        <form class="entry-form" id="entry-form">
+          <input type="hidden" id="entry-id">
+          <label for="entry-content">内容</label>
+          <textarea id="entry-content" name="content" rows="12" placeholder="直接把碎片信息放在这里..." required autofocus></textarea>
+
+          <div class="form-actions">
+            <button class="primary-button" type="submit" id="save-button">添加信息</button>
+            <button class="ghost-button" type="button" id="cancel-edit" hidden>取消编辑</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="library-panel" aria-label="信息查询和管理">
+        <div class="toolbar">
+          <div>
+            <p class="eyebrow" id="view-label">时间线</p>
+            <h2>已收集 <span id="entry-count">0</span> 条</h2>
+          </div>
+          <div class="toolbar-actions">
+            <label class="search-box" for="search-input">
+              <span aria-hidden="true">⌕</span>
+              <input id="search-input" type="search" placeholder="搜索内容">
+            </label>
+            <button class="manage-button" type="button" id="manage-toggle">管理</button>
+          </div>
+        </div>
+
+        <div class="filters" id="filters" aria-label="筛选">
+          <button class="filter-chip is-active" type="button" data-filter="all">全部</button>
+          <button class="filter-chip" type="button" data-filter="today">今天</button>
+          <button class="filter-chip" type="button" data-filter="week">近 7 天</button>
+        </div>
+
+        <div class="timeline" id="timeline"></div>
+        <div class="manage-list" id="manage-list" hidden></div>
+        <div class="empty-state" id="empty-state" hidden>
+          <h3>还没有碎片</h3>
+          <p>先在左侧添加一条信息，它会按时间自动出现在这里。</p>
+        </div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
