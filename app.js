@@ -23,19 +23,49 @@ render();
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();
-  const now = new Date().toISOString();
   const existingEntry = entries.find((item) => item.id === idInput.value);
+  saveEntry({
+    existingEntry,
+    content: contentInput.value.trim(),
+    imageData: existingEntry?.imageData || ""
+  });
+});
 
+contentInput.addEventListener("paste", (event) => {
+  const clipboardItems = event.clipboardData?.items || [];
+  const imageItem = [...clipboardItems].find((item) => item.type.startsWith("image/"));
+  if (!imageItem) return;
+
+  event.preventDefault();
+
+  const file = imageItem.getAsFile();
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.addEventListener("load", () => {
+    const existingEntry = entries.find((item) => item.id === idInput.value);
+    saveEntry({
+      existingEntry,
+      content: contentInput.value.trim(),
+      imageData: reader.result
+    });
+  });
+  reader.readAsDataURL(file);
+});
+
+function saveEntry({ existingEntry, content, imageData }) {
+  const now = new Date().toISOString();
   const entry = {
     id: existingEntry?.id || crypto.randomUUID(),
     title: existingEntry?.title || "",
-    content: contentInput.value.trim(),
+    content,
+    imageData,
     tags: existingEntry?.tags || [],
     date: existingEntry?.date || now,
     updatedAt: now
   };
 
-  if (!entry.content) return;
+  if (!entry.content && !entry.imageData) return;
 
   const existingIndex = entries.findIndex((item) => item.id === entry.id);
   if (existingIndex >= 0) {
@@ -47,7 +77,7 @@ form.addEventListener("submit", (event) => {
   saveEntries();
   resetForm();
   render();
-});
+}
 
 cancelEditButton.addEventListener("click", resetForm);
 searchInput.addEventListener("input", render);
@@ -115,7 +145,8 @@ function render() {
       </div>
     `;
 
-    item.querySelector(".item-content").textContent = entry.content;
+    renderEntryContent(item.querySelector(".item-content"), entry);
+    renderEntryImage(item.querySelector(".item-card"), entry);
 
     timeline.append(item);
   });
@@ -137,7 +168,8 @@ function renderManageList(visibleEntries) {
       </div>
     `;
 
-    item.querySelector(".item-content").textContent = entry.content;
+    renderEntryContent(item.querySelector(".item-content"), entry);
+    renderEntryImage(item.querySelector(".manage-body"), entry);
     manageList.append(item);
   });
 }
@@ -176,7 +208,7 @@ function deleteEntry(id) {
   const entry = entries.find((item) => item.id === id);
   if (!entry) return;
 
-  const confirmed = window.confirm(`删除这条信息吗？\n\n${getEntryPreview(entry.content)}`);
+  const confirmed = window.confirm(`删除这条信息吗？\n\n${getEntryPreview(entry)}`);
   if (!confirmed) return;
 
   entries = entries.filter((item) => item.id !== id);
@@ -202,8 +234,24 @@ function formatDate(value) {
   }).format(new Date(value));
 }
 
-function getEntryPreview(content) {
-  return content.length > 42 ? `${content.slice(0, 42)}...` : content;
+function getEntryPreview(entry) {
+  const preview = entry.content || (entry.imageData ? "[图片]" : "");
+  return preview.length > 42 ? `${preview.slice(0, 42)}...` : preview;
+}
+
+function renderEntryContent(contentElement, entry) {
+  contentElement.textContent = entry.content || "";
+  contentElement.hidden = !entry.content;
+}
+
+function renderEntryImage(container, entry) {
+  if (!entry.imageData) return;
+
+  const image = document.createElement("img");
+  image.className = "entry-image";
+  image.src = entry.imageData;
+  image.alt = entry.content ? "粘贴图片" : "已保存图片";
+  container.append(image);
 }
 
 function loadEntries() {
