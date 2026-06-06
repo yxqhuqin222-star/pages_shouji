@@ -61,6 +61,7 @@ function saveEntry({ existingEntry, content, imageData }) {
     content,
     imageData,
     tags: existingEntry?.tags || [],
+    category: getEntryCategory(content),
     date: existingEntry?.date || now,
     updatedAt: now
   };
@@ -139,12 +140,14 @@ function render() {
       <div class="item-card">
         <div class="item-header">
           <div>
+            <span class="category-tag"></span>
             <p class="item-content"></p>
           </div>
         </div>
       </div>
     `;
 
+    renderCategoryTag(item.querySelector(".category-tag"), entry);
     renderEntryContent(item.querySelector(".item-content"), entry);
     renderEntryImage(item.querySelector(".item-card"), entry);
 
@@ -153,24 +156,47 @@ function render() {
 }
 
 function renderManageList(visibleEntries) {
-  visibleEntries.forEach((entry, index) => {
-    const item = document.createElement("article");
-    item.className = "manage-item";
-    item.innerHTML = `
-      <div class="manage-index">${index + 1}</div>
-      <div class="manage-body">
-        <time class="item-date" datetime="${entry.date}">${formatDate(entry.date)}</time>
-        <p class="item-content"></p>
-      </div>
-      <div class="item-actions">
-        <button class="item-action" type="button" data-action="edit" data-id="${entry.id}">编辑</button>
-        <button class="item-action" type="button" data-action="delete" data-id="${entry.id}">删除</button>
+  const categoryGroups = [
+    { key: "todo", label: "todo" },
+    { key: "other", label: "其他" }
+  ];
+
+  categoryGroups.forEach((group) => {
+    const groupEntries = visibleEntries.filter((entry) => getEntryCategory(entry.content, entry.category) === group.key);
+    if (groupEntries.length === 0) return;
+
+    const section = document.createElement("section");
+    section.className = "manage-group";
+    section.innerHTML = `
+      <div class="manage-group-header">
+        <h3>${group.label}</h3>
+        <span>${groupEntries.length}</span>
       </div>
     `;
 
-    renderEntryContent(item.querySelector(".item-content"), entry);
-    renderEntryImage(item.querySelector(".manage-body"), entry);
-    manageList.append(item);
+    groupEntries.forEach((entry, index) => {
+      const item = document.createElement("article");
+      item.className = "manage-item";
+      item.innerHTML = `
+        <div class="manage-index">${index + 1}</div>
+        <div class="manage-body">
+          <time class="item-date" datetime="${entry.date}">${formatDate(entry.date)}</time>
+          <span class="category-tag"></span>
+          <p class="item-content"></p>
+        </div>
+        <div class="item-actions">
+          <button class="item-action" type="button" data-action="edit" data-id="${entry.id}">编辑</button>
+          <button class="item-action" type="button" data-action="delete" data-id="${entry.id}">删除</button>
+        </div>
+      `;
+
+      renderCategoryTag(item.querySelector(".category-tag"), entry);
+      renderEntryContent(item.querySelector(".item-content"), entry);
+      renderEntryImage(item.querySelector(".manage-body"), entry);
+      section.append(item);
+    });
+
+    manageList.append(section);
   });
 }
 
@@ -237,6 +263,21 @@ function formatDate(value) {
 function getEntryPreview(entry) {
   const preview = entry.content || (entry.imageData ? "[图片]" : "");
   return preview.length > 42 ? `${preview.slice(0, 42)}...` : preview;
+}
+
+function getEntryCategory(content, savedCategory) {
+  if (savedCategory === "todo" || savedCategory === "other") return savedCategory;
+  return (content || "").toLowerCase().includes("todo") ? "todo" : "other";
+}
+
+function getEntryCategoryLabel(entry) {
+  return getEntryCategory(entry.content, entry.category) === "todo" ? "todo" : "其他";
+}
+
+function renderCategoryTag(tagElement, entry) {
+  const category = getEntryCategory(entry.content, entry.category);
+  tagElement.textContent = getEntryCategoryLabel(entry);
+  tagElement.dataset.category = category;
 }
 
 function renderEntryContent(contentElement, entry) {
