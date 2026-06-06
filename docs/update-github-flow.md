@@ -157,7 +157,79 @@ git commit -m "合并远端更新"
 git push origin main
 ```
 
+## 用新分支保存一次改动
+
+如果这次改动比较大，或者想先保留旧版本不动，可以先从 `main` 建一个新分支。这样 `main` 还是旧版本，新改动会放在新分支里。
+
+### 1. 从 main 开始
+
+```bash
+git switch main
+git pull origin main
+```
+
+确认当前是干净状态：
+
+```bash
+git status
+```
+
+### 2. 建立新分支
+
+分支名建议写清楚这次改动内容，例如：
+
+```bash
+git switch -c codex/apple-ui-category-polish
+```
+
+含义：
+
+- `git switch -c` 会创建并切换到新分支。
+- 之后的提交都会先进入这个新分支，不会直接进入 `main`。
+
+### 3. 提交并推送新分支
+
+```bash
+git add .
+git commit -m "Polish collection UI and category labels"
+git push -u origin codex/apple-ui-category-polish
+```
+
+推送成功后，GitHub 会给出创建 Pull Request 的链接。可以打开链接，把这个分支合并回 `main`。
+
+### 4. 回到旧版本查看
+
+如果想回到旧版本看页面，切回 `main`：
+
+```bash
+git switch main
+```
+
+如果想继续看新版本，再切回新分支：
+
+```bash
+git switch codex/apple-ui-category-polish
+```
+
+这不是删除或回滚代码，只是在不同版本线之间切换。
+
+### 5. 真正回滚到旧版本
+
+如果新分支还没有合并到 `main`，最简单的回滚方式就是不合并这个分支，继续使用 `main`。
+
+如果新分支已经合并到 `main`，需要回滚线上版本时，先找到要回滚的提交，再用 `git revert` 生成一个新的回滚提交。不要直接改 GitHub 上的历史记录：
+
+```bash
+git switch main
+git pull origin main
+git log --oneline
+git revert <要回滚的提交ID>
+git push origin main
+```
+
 ## 推荐的完整命令顺序
+
+直接更新 `main`：
 
 ```bash
 cd /Users/kityhello/Documents/codex_total/pages_shouji
@@ -171,10 +243,26 @@ git push origin main
 
 其中本地服务启动后会占用当前窗口。检查完页面后，可以按 `Control + C` 停止服务，再继续执行后面的 Git 操作。
 
+用新分支更新：
+
+```bash
+cd /Users/kityhello/Documents/codex_total/pages_shouji
+git switch main
+git pull origin main
+git switch -c codex/本次改动名称
+git status
+python3 -m http.server 4173
+git diff
+git add .
+git commit -m "说明本次改动"
+git push -u origin codex/本次改动名称
+```
+
 ## 每次发布前的简短检查清单
 
 - 页面本地看过，没有明显问题。
 - `git diff` 看过，改动范围符合预期。
 - 提交信息能说明本次修改内容。
-- `git push origin main` 已成功。
+- 如果直接更新 main，`git push origin main` 已成功。
+- 如果使用新分支，新分支已推送到 GitHub，并已创建或准备创建 Pull Request。
 - GitHub Pages 线上页面已刷新。
