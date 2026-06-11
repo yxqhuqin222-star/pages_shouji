@@ -11,13 +11,12 @@ const manageList = document.querySelector("#manage-list");
 const emptyState = document.querySelector("#empty-state");
 const entryCount = document.querySelector("#entry-count");
 const viewLabel = document.querySelector("#view-label");
-const filters = document.querySelector("#filters");
-const manageToggle = document.querySelector("#manage-toggle");
-const filterButtons = document.querySelectorAll("[data-filter]");
+const exportButton = document.querySelector("#export-button");
+const tagList = document.querySelector("#tag-list");
+const allNotesButton = document.querySelector("#all-notes-button");
 
 let entries = loadEntries();
-let activeFilter = "all";
-let activeView = "timeline";
+let activeTag = "";
 
 render();
 
@@ -82,28 +81,33 @@ function saveEntry({ existingEntry, content, imageData }) {
 
 cancelEditButton.addEventListener("click", resetForm);
 searchInput.addEventListener("input", render);
-manageToggle.addEventListener("click", () => {
-  activeView = activeView === "timeline" ? "manage" : "timeline";
+exportButton.addEventListener("click", exportEntries);
+allNotesButton.addEventListener("click", () => {
+  activeTag = "";
   render();
 });
-
-filterButtons.forEach((button) => {
-  button.addEventListener("click", () => {
-    activeFilter = button.dataset.filter;
-    filterButtons.forEach((item) => item.classList.toggle("is-active", item === button));
-    render();
-  });
-});
-
-manageList.addEventListener("click", handleEntryAction);
 timeline.addEventListener("click", handleEntryAction);
+document.addEventListener("click", closeOpenMenus);
+tagList.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-tag]");
+  if (!button) return;
+
+  activeTag = button.dataset.tag;
+  render();
+});
 
 function handleEntryAction(event) {
   const button = event.target.closest("[data-action]");
   if (!button) return;
 
+  event.stopPropagation();
   const entry = entries.find((item) => item.id === button.dataset.id);
   if (!entry) return;
+
+  if (button.dataset.action === "menu") {
+    toggleEntryMenu(button);
+    return;
+  }
 
   if (button.dataset.action === "edit") {
     startEdit(entry);
@@ -120,34 +124,29 @@ function render() {
   entryCount.textContent = entries.length;
   timeline.innerHTML = "";
   manageList.innerHTML = "";
-  timeline.hidden = activeView !== "timeline";
-  manageList.hidden = activeView !== "manage";
-  filters.hidden = activeView !== "timeline";
-  viewLabel.textContent = activeView === "timeline" ? "时间线" : "管理";
-  manageToggle.textContent = activeView === "timeline" ? "管理" : "返回时间线";
+  viewLabel.textContent = activeTag ? `#${activeTag}` : "全部笔记";
   emptyState.hidden = visibleEntries.length > 0;
-
-  if (activeView === "manage") {
-    renderManageList(visibleEntries);
-    return;
-  }
+  renderTagList();
 
   visibleEntries.forEach((entry) => {
     const item = document.createElement("article");
     item.className = "timeline-item";
     item.innerHTML = `
-      <time class="item-date" datetime="${entry.date}">${formatDate(entry.date)}</time>
       <div class="item-card">
-        <div class="item-header">
-          <div>
-            <span class="category-tag"></span>
-            <p class="item-content"></p>
+        <div class="item-topline">
+          <time class="item-date" datetime="${entry.date}">${formatDate(entry.date)}</time>
+          <div class="entry-menu">
+            <button class="menu-button" type="button" aria-label="更多操作" data-action="menu" data-id="${entry.id}">...</button>
+            <div class="menu-popover" hidden>
+              <button type="button" data-action="edit" data-id="${entry.id}">编辑</button>
+              <button type="button" data-action="delete" data-id="${entry.id}">删除</button>
+            </div>
           </div>
         </div>
+        <p class="item-content"></p>
       </div>
     `;
 
-    renderCategoryTag(item.querySelector(".category-tag"), entry);
     renderEntryContent(item.querySelector(".item-content"), entry);
     renderEntryImage(item.querySelector(".item-card"), entry);
 
@@ -155,71 +154,87 @@ function render() {
   });
 }
 
-function renderManageList(visibleEntries) {
-  const categoryGroups = [
-    { key: "todo", label: "todo" },
-    { key: "other", label: "其他" }
-  ];
-
-  categoryGroups.forEach((group) => {
-    const groupEntries = visibleEntries.filter((entry) => getEntryCategory(entry.content, entry.category) === group.key);
-    if (groupEntries.length === 0) return;
-
-    const section = document.createElement("section");
-    section.className = "manage-group";
-    section.innerHTML = `
-      <div class="manage-group-header">
-        <h3>${group.label}</h3>
-        <span>${groupEntries.length}</span>
-      </div>
-    `;
-
-    groupEntries.forEach((entry, index) => {
-      const item = document.createElement("article");
-      item.className = "manage-item";
-      item.innerHTML = `
-        <div class="manage-index">${index + 1}</div>
-        <div class="manage-body">
-          <time class="item-date" datetime="${entry.date}">${formatDate(entry.date)}</time>
-          <span class="category-tag"></span>
-          <p class="item-content"></p>
-        </div>
-        <div class="item-actions">
-          <button class="item-action" type="button" data-action="edit" data-id="${entry.id}">编辑</button>
-          <button class="item-action" type="button" data-action="delete" data-id="${entry.id}">删除</button>
-        </div>
-      `;
-
-      renderCategoryTag(item.querySelector(".category-tag"), entry);
-      renderEntryContent(item.querySelector(".item-content"), entry);
-      renderEntryImage(item.querySelector(".manage-body"), entry);
-      section.append(item);
-    });
-
-    manageList.append(section);
-  });
-}
-
 function getVisibleEntries() {
   const keyword = searchInput.value.trim().toLowerCase();
-  const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const weekStart = new Date(todayStart);
-  weekStart.setDate(todayStart.getDate() - 6);
 
   return entries
     .filter((entry) => {
-      const entryDate = new Date(entry.date);
-      if (activeFilter === "today") return entryDate >= todayStart;
-      if (activeFilter === "week") return entryDate >= weekStart;
-      return true;
+      if (!activeTag) return true;
+      return getEntryTags(entry).includes(activeTag);
     })
     .filter((entry) => {
       if (!keyword) return true;
-      const searchable = [entry.title || "", entry.content || "", (entry.tags || []).join(" ")].join(" ").toLowerCase();
+      const searchable = [entry.title || "", entry.content || "", getEntryTags(entry).join(" ")].join(" ").toLowerCase();
       return searchable.includes(keyword);
     })
     .sort((a, b) => new Date(b.date) - new Date(a.date));
+}
+
+function renderTagList() {
+  const tags = getAllTags();
+
+  tagList.innerHTML = "";
+  allNotesButton.classList.toggle("is-active", activeTag === "");
+
+  if (tags.length === 0) {
+    const emptyTag = document.createElement("p");
+    emptyTag.className = "tag-empty";
+    emptyTag.textContent = "暂无标签";
+    tagList.append(emptyTag);
+    return;
+  }
+
+  tags.forEach((tag) => {
+    const button = document.createElement("button");
+    button.className = "tag-nav";
+    button.type = "button";
+    button.dataset.tag = tag;
+    button.classList.toggle("is-active", activeTag === tag);
+    button.innerHTML = `<span aria-hidden="true">#</span><span></span>`;
+    button.querySelector("span:last-child").textContent = tag;
+    tagList.append(button);
+  });
+}
+
+function getAllTags() {
+  const tagSet = new Set();
+
+  entries.forEach((entry) => {
+    getEntryTags(entry).forEach((tag) => tagSet.add(tag));
+  });
+
+  return [...tagSet].sort((a, b) => a.localeCompare(b, "zh-CN"));
+}
+
+function getEntryTags(entry) {
+  const tags = extractTags(entry.content);
+  if (tags.length > 0) return tags;
+  return [getEntryCategoryLabel(entry)];
+}
+
+function extractTags(content) {
+  const matches = content?.match(/#[^\s#]+/g) || [];
+  return [...new Set(matches.map((tag) => tag.slice(1)))];
+}
+
+function getContentWithoutTags(content) {
+  return (content || "").replace(/#[^\s#]+/g, "").replace(/\s+/g, " ").trim();
+}
+
+function toggleEntryMenu(button) {
+  const menu = button.nextElementSibling;
+  const shouldOpen = menu.hidden;
+
+  closeOpenMenus();
+  menu.hidden = !shouldOpen;
+}
+
+function closeOpenMenus(event) {
+  if (event?.target.closest(".entry-menu")) return;
+
+  document.querySelectorAll(".menu-popover").forEach((menu) => {
+    menu.hidden = true;
+  });
 }
 
 function startEdit(entry) {
@@ -243,10 +258,81 @@ function deleteEntry(id) {
   render();
 }
 
+function exportEntries() {
+  if (entries.length === 0) {
+    window.alert("暂无可导出的内容");
+    return;
+  }
+
+  const exportRows = [...entries].sort((a, b) => new Date(b.date) - new Date(a.date));
+  const documentForExport = document.implementation.createHTMLDocument("碎片导出");
+  const style = documentForExport.createElement("style");
+  const table = documentForExport.createElement("table");
+  const headerRow = table.insertRow();
+
+  style.textContent = `
+    table { border-collapse: collapse; }
+    th, td { border: 1px solid #d4d4d2; padding: 8px; vertical-align: top; white-space: pre-wrap; }
+    th { background: #f0f0ee; }
+  `;
+  documentForExport.head.append(style);
+
+  ["分类", "日期", "内容"].forEach((title) => {
+    const cell = documentForExport.createElement("th");
+    cell.textContent = title;
+    headerRow.append(cell);
+  });
+
+  exportRows.forEach((entry) => {
+    const row = table.insertRow();
+    row.insertCell().textContent = getEntryCategoryLabel(entry);
+    row.insertCell().textContent = formatExportDate(entry.date);
+    renderExportContent(row.insertCell(), entry, documentForExport);
+  });
+
+  documentForExport.body.append(table);
+
+  const html = `\uFEFF${documentForExport.documentElement.outerHTML}`;
+  const blob = new Blob([html], { type: "application/vnd.ms-excel;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = `碎片导出-${getExportFileDate()}.xls`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function renderExportContent(cell, entry, documentForExport) {
+  if (entry.content) {
+    const content = documentForExport.createElement("div");
+    content.textContent = entry.content;
+    cell.append(content);
+  }
+
+  if (!entry.imageData) return;
+
+  const imageLabel = documentForExport.createElement("div");
+  imageLabel.textContent = "[图片]";
+  cell.append(imageLabel);
+
+  const image = documentForExport.createElement("img");
+  image.src = entry.imageData;
+  image.alt = "已保存图片";
+  image.width = 240;
+  image.style.display = "block";
+  image.style.marginTop = "8px";
+  image.style.maxWidth = "240px";
+  image.style.height = "auto";
+  cell.append(image);
+}
+
 function resetForm() {
   form.reset();
   idInput.value = "";
-  saveButton.textContent = "添加信息";
+  saveButton.textContent = "发送";
   cancelEditButton.hidden = true;
   contentInput.focus();
 }
@@ -258,6 +344,24 @@ function formatDate(value) {
     hour: "2-digit",
     minute: "2-digit"
   }).format(new Date(value));
+}
+
+function formatExportDate(value) {
+  return new Intl.DateTimeFormat("zh-CN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(new Date(value));
+}
+
+function getExportFileDate() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}${month}${day}`;
 }
 
 function getEntryPreview(entry) {
@@ -274,15 +378,29 @@ function getEntryCategoryLabel(entry) {
   return getEntryCategory(entry.content, entry.category) === "todo" ? "todo" : "其他";
 }
 
-function renderCategoryTag(tagElement, entry) {
-  const category = getEntryCategory(entry.content, entry.category);
-  tagElement.textContent = getEntryCategoryLabel(entry);
-  tagElement.dataset.category = category;
-}
-
 function renderEntryContent(contentElement, entry) {
-  contentElement.textContent = entry.content || "";
-  contentElement.hidden = !entry.content;
+  const tags = getEntryTags(entry);
+  const content = getContentWithoutTags(entry.content);
+
+  contentElement.innerHTML = "";
+  tags.forEach((tag) => {
+    const tagElement = document.createElement("button");
+    tagElement.className = "category-tag";
+    tagElement.type = "button";
+    tagElement.dataset.tag = tag;
+    tagElement.textContent = `#${tag}`;
+    tagElement.addEventListener("click", () => {
+      activeTag = tag;
+      render();
+    });
+    contentElement.append(tagElement);
+  });
+
+  if (content) {
+    contentElement.append(document.createTextNode(content));
+  }
+
+  contentElement.hidden = !content && !entry.imageData;
 }
 
 function renderEntryImage(container, entry) {

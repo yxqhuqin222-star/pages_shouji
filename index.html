@@ -8,50 +8,59 @@
   </head>
   <body>
     <main class="app-shell">
-      <section class="capture-panel" aria-labelledby="app-title">
-        <div class="brand-block">
-          <p class="eyebrow">GIN / CAPTURE</p>
-          <h1 id="app-title">碎片收集</h1>
+      <aside class="sidebar" aria-label="笔记导航">
+        <div class="sidebar-nav">
+          <button class="nav-item is-active" type="button" id="all-notes-button">
+            <span aria-hidden="true">▶</span>
+            <span>全部笔记</span>
+          </button>
+          <button class="nav-item" type="button" id="export-button">
+            <span aria-hidden="true">↧</span>
+            <span>导出 Excel</span>
+          </button>
         </div>
+
+        <div class="tag-panel">
+          <p class="sidebar-title">全部标签</p>
+          <div class="tag-list" id="tag-list"></div>
+        </div>
+      </aside>
+
+      <section class="main-panel" aria-label="碎片收集">
+        <header class="topbar">
+          <div>
+            <h1 id="view-label">全部笔记</h1>
+            <p class="count-line">已收集 <span id="entry-count">0</span> 条</p>
+          </div>
+          <label class="search-box" for="search-input">
+            <span aria-hidden="true">⌕</span>
+            <input id="search-input" type="search" placeholder="搜索内容">
+          </label>
+        </header>
 
         <form class="entry-form" id="entry-form">
           <input type="hidden" id="entry-id">
-          <label for="entry-content">内容</label>
-          <textarea id="entry-content" name="content" rows="12" placeholder="直接把碎片信息放在这里..." autofocus></textarea>
-
-          <div class="form-actions">
-            <button class="primary-button" type="submit" id="save-button">添加信息</button>
-            <button class="ghost-button" type="button" id="cancel-edit" hidden>取消编辑</button>
+          <textarea id="entry-content" name="content" rows="4" placeholder="现在的想法是..." autofocus></textarea>
+          <div class="composer-actions">
+            <div class="composer-tools" aria-hidden="true">
+              <span>#</span>
+              <span>▧</span>
+              <span>Aa</span>
+              <span>☰</span>
+              <span>@</span>
+            </div>
+            <div class="form-actions">
+              <button class="ghost-button" type="button" id="cancel-edit" hidden>取消</button>
+              <button class="primary-button" type="submit" id="save-button">发送</button>
+            </div>
           </div>
         </form>
-      </section>
-
-      <section class="library-panel" aria-label="信息查询和管理">
-        <div class="toolbar">
-          <div>
-            <p class="eyebrow" id="view-label">时间线</p>
-            <h2>已收集 <span id="entry-count">0</span> 条</h2>
-          </div>
-          <div class="toolbar-actions">
-            <label class="search-box" for="search-input">
-              <span aria-hidden="true">SEARCH</span>
-              <input id="search-input" type="search" placeholder="搜索内容">
-            </label>
-            <button class="manage-button" type="button" id="manage-toggle">管理</button>
-          </div>
-        </div>
-
-        <div class="filters" id="filters" aria-label="筛选">
-          <button class="filter-chip is-active" type="button" data-filter="all">全部</button>
-          <button class="filter-chip" type="button" data-filter="today">今天</button>
-          <button class="filter-chip" type="button" data-filter="week">近 7 天</button>
-        </div>
 
         <div class="timeline" id="timeline"></div>
         <div class="manage-list" id="manage-list" hidden></div>
         <div class="empty-state" id="empty-state" hidden>
           <h3>还没有碎片</h3>
-          <p>先在左侧添加一条信息，它会按时间自动出现在这里。</p>
+          <p>先写下一条信息，它会按时间出现在这里。</p>
         </div>
       </section>
     </main>

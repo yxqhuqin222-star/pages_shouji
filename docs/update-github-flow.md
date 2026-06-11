@@ -4,7 +4,7 @@
 
 ## 适用前提
 
-- 本地项目路径：`/Users/kityhello/Documents/codex_total/pages_shouji`
+- 本地项目路径：`/Users/kityhello/workplace/project/pages_shouji`
 - 当前仓库已连接 GitHub：`https://github.com/yxqhuqin222-star/pages_shouji.git`
 - 默认更新分支：`main`
 - 网站是纯静态页面，主要文件是 `index.html`、`styles.css`、`app.js`
@@ -232,7 +232,7 @@ git push origin main
 直接更新 `main`：
 
 ```bash
-cd /Users/kityhello/Documents/codex_total/pages_shouji
+cd /Users/kityhello/workplace/project/pages_shouji
 git status
 python3 -m http.server 4173
 git diff
@@ -246,7 +246,7 @@ git push origin main
 用新分支更新：
 
 ```bash
-cd /Users/kityhello/Documents/codex_total/pages_shouji
+cd /Users/kityhello/workplace/project/pages_shouji
 git switch main
 git pull origin main
 git switch -c codex/本次改动名称
