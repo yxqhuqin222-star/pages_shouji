@@ -334,7 +334,6 @@ function resetForm() {
   idInput.value = "";
   saveButton.textContent = "发送";
   cancelEditButton.hidden = true;
-  contentInput.focus();
 }
 
 function formatDate(value) {

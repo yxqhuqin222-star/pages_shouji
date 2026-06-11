@@ -27,10 +27,12 @@
       </aside>
 
       <section class="main-panel" aria-label="碎片收集">
-        <header class="topbar">
-          <div>
-            <h1 id="view-label">全部笔记</h1>
-            <p class="count-line">已收集 <span id="entry-count">0</span> 条</p>
+        <div class="workspace">
+        <header class="brand-bar">
+          <div class="brand-copy">
+            <p class="brand-mark">Gin</p>
+            <h1 class="brand-title">碎片收集</h1>
+            <p class="brand-subtitle">把临时想法、灵感和待办先收进一个安静的地方。</p>
           </div>
           <label class="search-box" for="search-input">
             <span aria-hidden="true">⌕</span>
@@ -38,17 +40,17 @@
           </label>
         </header>
 
+        <div class="section-head">
+          <div>
+            <h2 id="view-label">全部笔记</h2>
+            <p class="count-line">已收集 <span id="entry-count">0</span> 条</p>
+          </div>
+        </div>
+
         <form class="entry-form" id="entry-form">
           <input type="hidden" id="entry-id">
-          <textarea id="entry-content" name="content" rows="4" placeholder="现在的想法是..." autofocus></textarea>
+          <textarea id="entry-content" name="content" rows="4" placeholder="现在的想法是..."></textarea>
           <div class="composer-actions">
-            <div class="composer-tools" aria-hidden="true">
-              <span>#</span>
-              <span>▧</span>
-              <span>Aa</span>
-              <span>☰</span>
-              <span>@</span>
-            </div>
             <div class="form-actions">
               <button class="ghost-button" type="button" id="cancel-edit" hidden>取消</button>
               <button class="primary-button" type="submit" id="save-button">发送</button>
@@ -61,6 +63,7 @@
         <div class="empty-state" id="empty-state" hidden>
           <h3>还没有碎片</h3>
           <p>先写下一条信息，它会按时间出现在这里。</p>
+        </div>
         </div>
       </section>
     </main>
