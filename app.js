@@ -9,7 +9,7 @@ const searchInput = document.querySelector("#search-input");
 const timeline = document.querySelector("#timeline");
 const manageList = document.querySelector("#manage-list");
 const emptyState = document.querySelector("#empty-state");
-const entryCount = document.querySelector("#entry-count");
+const countLine = document.querySelector("#count-line");
 const viewLabel = document.querySelector("#view-label");
 const exportButton = document.querySelector("#export-button");
 const tagList = document.querySelector("#tag-list");
@@ -120,12 +120,14 @@ function handleEntryAction(event) {
 
 function render() {
   const visibleEntries = getVisibleEntries();
+  const isFiltered = activeTag || searchInput.value.trim();
 
-  entryCount.textContent = entries.length;
+  countLine.textContent = isFiltered ? `显示 ${visibleEntries.length} / ${entries.length} 条` : `已收集 ${entries.length} 条`;
   timeline.innerHTML = "";
   manageList.innerHTML = "";
   viewLabel.textContent = activeTag ? `#${activeTag}` : "全部笔记";
   emptyState.hidden = visibleEntries.length > 0;
+  renderEmptyState(isFiltered);
   renderTagList();
 
   visibleEntries.forEach((entry) => {
@@ -152,6 +154,14 @@ function render() {
 
     timeline.append(item);
   });
+}
+
+function renderEmptyState(isFiltered) {
+  const title = emptyState.querySelector("h3");
+  const description = emptyState.querySelector("p");
+
+  title.textContent = isFiltered ? "没有匹配的碎片" : "还没有碎片";
+  description.textContent = isFiltered ? "换个关键词，或切回全部笔记再看看。" : "先写下一条信息，它会按时间出现在这里。";
 }
 
 function getVisibleEntries() {
