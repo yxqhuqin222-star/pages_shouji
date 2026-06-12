@@ -46,7 +46,7 @@ button {
 
 .app-shell {
   display: grid;
-  grid-template-columns: 312px minmax(0, 1fr);
+  grid-template-columns: 240px minmax(0, 1fr);
   min-height: 100vh;
   background: var(--page);
 }
@@ -54,9 +54,12 @@ button {
 .sidebar {
   position: sticky;
   top: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
   height: 100vh;
   overflow-y: auto;
-  padding: 28px;
+  padding: 88px 20px 24px;
   background: var(--sidebar);
 }
 
@@ -68,13 +71,13 @@ button {
 .nav-item,
 .tag-nav {
   width: 100%;
-  min-height: 54px;
+  min-height: 48px;
   border: 0;
   border-radius: 10px;
   color: var(--ink);
   background: transparent;
   text-align: left;
-  font-size: 1.08rem;
+  font-size: 1rem;
   font-weight: 700;
   transition: background 140ms ease, transform 140ms ease, color 140ms ease;
 }
@@ -82,8 +85,8 @@ button {
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 0 18px;
+  gap: 14px;
+  padding: 0 16px;
 }
 
 .nav-item:hover,
@@ -101,15 +104,15 @@ button {
 }
 
 .nav-item.is-active {
-  background: var(--green);
+  background: rgba(57, 118, 79, 0.72);
 }
 
 .nav-item.is-active:hover {
-  background: var(--green-hover);
+  background: rgba(68, 134, 92, 0.82);
 }
 
 .tag-panel {
-  padding-top: 46px;
+  padding-top: 40px;
 }
 
 .sidebar-title {
@@ -126,9 +129,9 @@ button {
 
 .tag-nav {
   display: grid;
-  grid-template-columns: 38px minmax(0, 1fr);
+  grid-template-columns: 32px minmax(0, 1fr);
   align-items: center;
-  padding: 0 18px;
+  padding: 0 16px;
 }
 
 .tag-nav span:first-child {
@@ -155,11 +158,11 @@ button {
 }
 
 .main-panel {
-  padding: 38px 48px 56px;
+  padding: 40px 32px 56px;
 }
 
 .workspace {
-  width: min(720px, 100%);
+  width: min(960px, 100%);
   margin: 0 auto;
 }
 
@@ -175,7 +178,7 @@ p {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: end;
   gap: 24px;
-  margin-bottom: 30px;
+  margin-bottom: 28px;
 }
 
 .brand-copy {
@@ -210,7 +213,7 @@ p {
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
 }
 
 h2 {
@@ -258,6 +261,7 @@ textarea::placeholder {
 }
 
 .entry-form {
+  position: relative;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 16px;
@@ -268,10 +272,11 @@ textarea::placeholder {
 textarea {
   display: block;
   width: 100%;
-  min-height: 150px;
+  height: 140px;
+  min-height: 140px;
   resize: vertical;
   border: 0;
-  padding: 26px 28px 14px;
+  padding: 24px 112px 58px 28px;
   color: var(--ink);
   background: transparent;
   outline: none;
@@ -281,11 +286,14 @@ textarea {
 }
 
 .composer-actions {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 18px;
-  padding: 0 18px 18px 28px;
+  padding: 0;
 }
 
 .form-actions {
@@ -323,7 +331,7 @@ textarea {
 
 .timeline {
   display: grid;
-  gap: 14px;
+  gap: 16px;
 }
 
 .timeline-item {
@@ -332,9 +340,9 @@ textarea {
 
 .item-card {
   position: relative;
-  min-height: 112px;
+  min-height: 120px;
   border-radius: 14px;
-  padding: 24px 30px 28px;
+  padding: 24px;
   background: var(--surface);
 }
 
@@ -343,7 +351,7 @@ textarea {
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 
 .item-date {
@@ -504,6 +512,7 @@ textarea {
 
   .workspace {
     margin: 0;
+    width: 100%;
   }
 
   .brand-bar {
@@ -530,14 +539,14 @@ textarea {
   }
 
   textarea {
-    min-height: 150px;
-    padding: 20px 18px 10px;
+    height: 140px;
+    min-height: 140px;
+    padding: 20px 96px 56px 18px;
   }
 
   .composer-actions {
-    align-items: stretch;
-    flex-direction: column;
-    padding: 0 14px 14px;
+    right: 14px;
+    bottom: 14px;
   }
 
   .form-actions {
