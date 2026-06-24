@@ -1,5 +1,8 @@
 const STORAGE_KEY = "personal-fragments-v1";
 const BACKUP_VERSION = 1;
+const IMAGE_MAX_EDGE = 1600;
+const IMAGE_MAX_BYTES = 900 * 1024;
+const IMAGE_QUALITY = 0.82;
 
 const form = document.querySelector("#entry-form");
 const idInput = document.querySelector("#entry-id");
@@ -34,7 +37,7 @@ form.addEventListener("submit", (event) => {
   });
 });
 
-contentInput.addEventListener("paste", (event) => {
+contentInput.addEventListener("paste", async (event) => {
   const clipboardItems = event.clipboardData?.items || [];
   const imageItem = [...clipboardItems].find((item) => item.type.startsWith("image/"));
   if (!imageItem) return;
@@ -44,16 +47,17 @@ contentInput.addEventListener("paste", (event) => {
   const file = imageItem.getAsFile();
   if (!file) return;
 
-  const reader = new FileReader();
-  reader.addEventListener("load", () => {
+  try {
+    const imageData = await getCompressedImageData(file);
     const existingEntry = entries.find((item) => item.id === idInput.value);
     saveEntry({
       existingEntry,
       content: contentInput.value.trim(),
-      imageData: reader.result
+      imageData
     });
-  });
-  reader.readAsDataURL(file);
+  } catch {
+    window.alert("图片读取失败，请换一张图片再试");
+  }
 });
 
 function saveEntry({ existingEntry, content, imageData }) {
@@ -71,14 +75,24 @@ function saveEntry({ existingEntry, content, imageData }) {
 
   if (!entry.content && !entry.imageData) return;
 
-  const existingIndex = entries.findIndex((item) => item.id === entry.id);
+  const previousEntries = entries;
+  const nextEntries = [...entries];
+  const existingIndex = nextEntries.findIndex((item) => item.id === entry.id);
   if (existingIndex >= 0) {
-    entries[existingIndex] = entry;
+    nextEntries[existingIndex] = entry;
   } else {
-    entries.unshift(entry);
+    nextEntries.unshift(entry);
   }
 
-  saveEntries();
+  entries = nextEntries;
+  try {
+    saveEntries();
+  } catch {
+    entries = previousEntries;
+    window.alert("保存失败：浏览器本地存储空间不足。请先导出备份，删除一些大图片后再试。");
+    return;
+  }
+
   resetForm();
   render();
 }
@@ -436,6 +450,61 @@ function renderExportContent(cell, entry, documentForExport) {
   image.style.maxWidth = "240px";
   image.style.height = "auto";
   cell.append(image);
+}
+
+function getCompressedImageData(file) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    const url = URL.createObjectURL(file);
+
+    image.addEventListener("load", () => {
+      URL.revokeObjectURL(url);
+      const shouldCompress = file.size > IMAGE_MAX_BYTES || Math.max(image.naturalWidth, image.naturalHeight) > IMAGE_MAX_EDGE;
+      if (!shouldCompress) {
+        readFileAsDataURL(file).then(resolve, reject);
+        return;
+      }
+
+      const scale = Math.min(1, IMAGE_MAX_EDGE / Math.max(image.naturalWidth, image.naturalHeight));
+      const width = Math.max(1, Math.round(image.naturalWidth * scale));
+      const height = Math.max(1, Math.round(image.naturalHeight * scale));
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
+
+      if (!context) {
+        reject(new Error("Canvas unavailable"));
+        return;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      context.fillStyle = "#ffffff";
+      context.fillRect(0, 0, width, height);
+      context.drawImage(image, 0, 0, width, height);
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          reject(new Error("Image compression failed"));
+          return;
+        }
+
+        readFileAsDataURL(blob).then(resolve, reject);
+      }, "image/jpeg", IMAGE_QUALITY);
+    });
+    image.addEventListener("error", () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Image load failed"));
+    });
+    image.src = url;
+  });
+}
+
+function readFileAsDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener("load", () => resolve(reader.result));
+    reader.addEventListener("error", () => reject(reader.error));
+    reader.readAsDataURL(file);
+  });
 }
 
 function resetForm() {
