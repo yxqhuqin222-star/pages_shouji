@@ -490,7 +490,13 @@ textarea {
     padding: 18px;
   }
 
-  .sidebar-nav,
+  .sidebar-nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    padding-bottom: 4px;
+  }
+
   .tag-list {
     display: flex;
     gap: 10px;
@@ -502,7 +508,11 @@ textarea {
     padding-top: 18px;
   }
 
-  .nav-item,
+  .nav-item {
+    width: 100%;
+    min-height: 46px;
+  }
+
   .tag-nav {
     flex: 0 0 auto;
     width: auto;
