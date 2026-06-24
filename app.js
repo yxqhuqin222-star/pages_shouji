@@ -1,4 +1,5 @@
 const STORAGE_KEY = "personal-fragments-v1";
+const BACKUP_VERSION = 1;
 
 const form = document.querySelector("#entry-form");
 const idInput = document.querySelector("#entry-id");
@@ -12,6 +13,9 @@ const emptyState = document.querySelector("#empty-state");
 const countLine = document.querySelector("#count-line");
 const viewLabel = document.querySelector("#view-label");
 const exportButton = document.querySelector("#export-button");
+const backupButton = document.querySelector("#backup-button");
+const restoreButton = document.querySelector("#restore-button");
+const restoreInput = document.querySelector("#restore-input");
 const tagList = document.querySelector("#tag-list");
 const allNotesButton = document.querySelector("#all-notes-button");
 
@@ -82,6 +86,9 @@ function saveEntry({ existingEntry, content, imageData }) {
 cancelEditButton.addEventListener("click", resetForm);
 searchInput.addEventListener("input", render);
 exportButton.addEventListener("click", exportEntries);
+backupButton.addEventListener("click", exportBackup);
+restoreButton.addEventListener("click", () => restoreInput.click());
+restoreInput.addEventListener("change", importBackup);
 allNotesButton.addEventListener("click", () => {
   activeTag = "";
   render();
@@ -315,6 +322,98 @@ function exportEntries() {
   URL.revokeObjectURL(url);
 }
 
+function exportBackup() {
+  const backup = {
+    version: BACKUP_VERSION,
+    exportedAt: new Date().toISOString(),
+    entries
+  };
+  const json = JSON.stringify(backup, null, 2);
+  const blob = new Blob([json], { type: "application/json;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = `碎片备份-${getExportFileDate()}.json`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function importBackup(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.addEventListener("load", () => {
+    try {
+      const backupEntries = parseBackupEntries(reader.result);
+      if (backupEntries.length === 0) {
+        window.alert("备份文件里没有可恢复的内容");
+        return;
+      }
+
+      const confirmed = window.confirm(`导入后会覆盖当前 ${entries.length} 条内容，恢复备份中的 ${backupEntries.length} 条内容。继续吗？`);
+      if (!confirmed) return;
+
+      const previousEntries = entries;
+      entries = backupEntries;
+
+      try {
+        saveEntries();
+      } catch {
+        entries = previousEntries;
+        window.alert("导入失败：浏览器本地存储空间不足，当前数据未改变");
+        return;
+      }
+
+      activeTag = "";
+      searchInput.value = "";
+      resetForm();
+      render();
+      window.alert("备份已导入");
+    } catch {
+      window.alert("无法导入：请选择本工具导出的 JSON 备份文件");
+    } finally {
+      restoreInput.value = "";
+    }
+  });
+  reader.readAsText(file);
+}
+
+function parseBackupEntries(value) {
+  const parsed = JSON.parse(value);
+  const rawEntries = Array.isArray(parsed) ? parsed : parsed?.entries;
+
+  if (!Array.isArray(rawEntries)) {
+    throw new Error("Invalid backup");
+  }
+
+  return rawEntries.map(normalizeBackupEntry);
+}
+
+function normalizeBackupEntry(entry) {
+  const now = new Date().toISOString();
+  const content = typeof entry.content === "string" ? entry.content : "";
+  const imageData = typeof entry.imageData === "string" ? entry.imageData : "";
+
+  if (!content && !imageData) {
+    throw new Error("Invalid entry");
+  }
+
+  return {
+    id: typeof entry.id === "string" && entry.id ? entry.id : crypto.randomUUID(),
+    title: typeof entry.title === "string" ? entry.title : "",
+    content,
+    imageData,
+    tags: Array.isArray(entry.tags) ? entry.tags.filter((tag) => typeof tag === "string") : [],
+    category: getEntryCategory(content, entry.category),
+    date: isValidDate(entry.date) ? entry.date : now,
+    updatedAt: isValidDate(entry.updatedAt) ? entry.updatedAt : now
+  };
+}
+
 function renderExportContent(cell, entry, documentForExport) {
   if (entry.content) {
     const content = documentForExport.createElement("div");
@@ -371,6 +470,10 @@ function getExportFileDate() {
   const month = String(now.getMonth() + 1).padStart(2, "0");
   const day = String(now.getDate()).padStart(2, "0");
   return `${year}${month}${day}`;
+}
+
+function isValidDate(value) {
+  return typeof value === "string" && !Number.isNaN(new Date(value).getTime());
 }
 
 function getEntryPreview(entry) {
