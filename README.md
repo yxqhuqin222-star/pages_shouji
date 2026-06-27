@@ -24,7 +24,7 @@
 
 ```text
 .
-├── favicon.png
+├── favicon.svg
 ├── index.html
 ├── styles.css
 ├── app.js
